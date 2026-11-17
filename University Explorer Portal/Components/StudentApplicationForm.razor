@@ -1,0 +1,79 @@
+﻿@* Reusable form component used by both Create and Edit Student Application pages *@
+<EditForm Model="@Application" OnValidSubmit="@HandleValidSubmit">
+    <DataAnnotationsValidator />
+    <ValidationSummary class="text-danger mb-3" />
+
+    <div class="mb-3">
+        <label for="studentName" class="form-label">Student Name</label>
+        <InputText id="studentName" class="form-control" @bind-Value="Application.StudentName" placeholder="Enter full name" />
+        <ValidationMessage For="@(() => Application.StudentName)" class="text-danger" />
+    </div>
+
+    <div class="mb-3">
+        <label for="email" class="form-label">Email Address</label>
+        <InputText id="email" type="email" class="form-control" @bind-Value="Application.Email" placeholder="student@example.com" />
+        <ValidationMessage For="@(() => Application.Email)" class="text-danger" />
+    </div>
+
+    <div class="mb-3">
+        <label for="country" class="form-label">Country</label>
+        <InputText id="country" class="form-control" @bind-Value="Application.Country" placeholder="e.g. Ireland" />
+        <ValidationMessage For="@(() => Application.Country)" class="text-danger" />
+    </div>
+
+    <div class="mb-3">
+        <label for="universityName" class="form-label">University Name</label>
+        <InputText id="universityName" class="form-control" @bind-Value="Application.UniversityName" placeholder="e.g. Trinity College Dublin" />
+        <ValidationMessage For="@(() => Application.UniversityName)" class="text-danger" />
+    </div>
+
+    <div class="mb-3">
+        <label for="courseName" class="form-label">Course Name</label>
+        <InputText id="courseName" class="form-control" @bind-Value="Application.CourseName" placeholder="e.g. BSc in Computing" />
+        <ValidationMessage For="@(() => Application.CourseName)" class="text-danger" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Personal Statement</label>
+        <InputTextArea class="form-control" rows="3" @bind-Value="Application.PersonalStatement" />
+        <ValidationMessage For="@(() => Application.PersonalStatement)" />
+    </div>
+
+    <div class="mb-3">
+        <label for="applicationDate" class="form-label">Application Date</label>
+        <InputDate id="applicationDate" class="form-control" @bind-Value="Application.ApplicationDate" />
+        <ValidationMessage For="@(() => Application.ApplicationDate)" class="text-danger" />
+    </div>
+
+    <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary" disabled="@IsSubmitting">
+            @(IsSubmitting ? "Submitting..." : SubmitButtonText)
+        </button>
+        <a href="/student-applications" class="btn btn-secondary">Cancel</a>
+    </div>
+</EditForm>
+
+@code {
+    [Parameter, EditorRequired]
+    public StudentApplication Application { get; set; } = new();
+
+    [Parameter]
+    public string SubmitButtonText { get; set; } = "Submit Application";
+
+    [Parameter]
+    public bool IsSubmitting { get; set; } = false;
+
+    [Parameter]
+    public EventCallback<UniversityExplorerPortal.Models.StudentApplication> OnSubmit { get; set; }
+
+
+    private async Task HandleValidSubmit()
+    {
+        if (OnSubmit.HasDelegate)
+        {
+            await OnSubmit.InvokeAsync(Application);
+        }
+    }
+
+
+}

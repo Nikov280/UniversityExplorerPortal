@@ -1,0 +1,115 @@
+﻿@page "/student-applications/edit/{Id:int}"
+@rendermode InteractiveServer
+@inject StudentApplicationService ApplicationService
+@inject NavigationManager Navigation
+
+<PageTitle>Edit Student Application</PageTitle>
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-warning text-dark">
+                    <h4 class="mb-0">Edit Student Application (ID: @Id)</h4>
+                </div>
+                <div class="card-body">
+                    @if (isLoading)
+                    {
+                        <div class="alert alert-info">
+                            <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                            Loading application details...
+                        </div>
+                    }
+                    else if (hasLoadError || existingApplication == null)
+                    {
+                        <div class="alert alert-danger">
+                            Unable to retrieve application details for ID @Id.
+                        </div>
+                        <a href="/student-applications" class="btn btn-secondary">Back to Applications</a>
+                    }
+                    else
+                    {
+                        @if (hasUpdateError)
+                        {
+                            <div class="alert alert-danger">
+                                Unable to update the student application. Please try again.
+                            </div>
+                        }
+
+                        <StudentApplicationForm Application="existingApplication"
+                                                SubmitButtonText="Update Application"
+                                                IsSubmitting="isSubmitting"
+                                                OnSubmit="HandleUpdateSubmit" />
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private StudentApplication? existingApplication;
+    private bool isLoading = true;
+    private bool hasLoadError = false;
+    private bool isSubmitting = false;
+    private bool hasUpdateError = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadApplicationAsync();
+    }
+
+    private async Task LoadApplicationAsync()
+    {
+        isLoading = true;
+        hasLoadError = false;
+
+        try
+        {
+            existingApplication = await ApplicationService.GetApplicationByIdAsync(Id);
+            if (existingApplication == null)
+            {
+                hasLoadError = true;
+            }
+        }
+        catch (Exception)
+        {
+            hasLoadError = true;
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task HandleUpdateSubmit(StudentApplication updatedApplication)
+    {
+        isSubmitting = true;
+        hasUpdateError = false;
+
+        try
+        {
+            var updated = await ApplicationService.UpdateApplicationAsync(Id, updatedApplication);
+            if (updated)
+            {
+                // Redirect to the Applications page after a successful update
+                Navigation.NavigateTo("/student-applications");
+            }
+            else
+            {
+                hasUpdateError = true;
+            }
+        }
+        catch (Exception)
+        {
+            hasUpdateError = true;
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+}

@@ -1,0 +1,44 @@
+﻿@* Reusable card component displaying summary information about a single university *@
+<div class="card h-100 shadow-sm">
+    <div class="card-body d-flex flex-column">
+        <h5 class="card-title text-primary">@University.Name</h5>
+        <p class="card-text mb-1">
+            <strong>Country:</strong> @University.Country
+        </p>
+        <p class="card-text mb-3">
+            <strong>Website:</strong>
+            @if (University.PrimaryWebsite != "N/A")
+            {
+                <a href="@University.PrimaryWebsite" target="_blank" rel="noopener noreferrer">
+                    @University.PrimaryWebsite
+                </a>
+            }
+            else
+            {
+                <span>N/A</span>
+            }
+        </p>
+        <div class="mt-auto">
+            <button class="btn btn-outline-primary btn-sm w-100" @onclick="HandleSelect">
+                View Details
+            </button>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public University University { get; set; } = new();
+
+    [Parameter]
+    public EventCallback<University> OnSelect { get; set; }
+
+    // Triggers the parent callback when a university is selected
+    private async Task HandleSelect()
+    {
+        if (OnSelect.HasDelegate)
+        {
+            await OnSelect.InvokeAsync(University);
+        }
+    }
+}

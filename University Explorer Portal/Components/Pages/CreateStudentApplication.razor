@@ -1,0 +1,100 @@
+﻿@page "/student-applications/create"
+@rendermode InteractiveServer
+@inject StudentApplicationService ApplicationService
+
+<PageTitle>Create Student Application</PageTitle>
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Create Student Application</h4>
+                </div>
+                <div class="card-body">
+                    @if (!string.IsNullOrWhiteSpace(successMessage))
+                    {
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            @successMessage
+                            <div class="mt-2">
+                                <a href="/student-applications" class="btn btn-sm btn-outline-success">View All Applications</a>
+                            </div>
+                        </div>
+                    }
+
+                    @if (hasError)
+                    {
+                        <div class="alert alert-danger">
+                            @errorMessage
+                        </div>
+                    }
+
+                    <StudentApplicationForm Application="newApplication"
+                                            SubmitButtonText="Submit Application"
+                                            IsSubmitting="isSubmitting"
+                                            OnSubmit="HandleCreateSubmit" />
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromQuery(Name = "country")]
+    public string? QueryCountry { get; set; }
+
+    [SupplyParameterFromQuery(Name = "university")]
+    public string? QueryUniversity { get; set; }
+
+    private StudentApplication newApplication = new();
+    private bool isSubmitting = false;
+    private bool hasError = false;
+    private string? successMessage;
+    private string? errorMessage;
+
+    protected override void OnParametersSet()
+    {
+        // Pre-populate fields if navigated from University Explorer details
+        if (!string.IsNullOrWhiteSpace(QueryCountry) && string.IsNullOrWhiteSpace(newApplication.Country))
+        {
+            newApplication.Country = QueryCountry;
+        }
+
+        if (!string.IsNullOrWhiteSpace(QueryUniversity) && string.IsNullOrWhiteSpace(newApplication.UniversityName))
+        {
+            newApplication.UniversityName = QueryUniversity;
+        }
+    }
+
+    private async Task HandleCreateSubmit(StudentApplication application)
+    {
+        isSubmitting = true;
+        hasError = false;
+        errorMessage = null;
+        successMessage = null;
+
+        try
+        {
+            var result = await ApplicationService.CreateApplicationAsync(application);
+            if (result.Success)
+            {
+                successMessage = "Student application submitted successfully!";
+                newApplication = new StudentApplication();
+            }
+            else
+            {
+                hasError = true;
+                errorMessage = $"Unable to submit the student application. {result.ErrorMessage}";
+            }
+        }
+        catch (Exception ex)
+        {
+            hasError = true;
+            errorMessage = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+}

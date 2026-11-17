@@ -1,0 +1,198 @@
+﻿@page "/university-explorer"
+@rendermode InteractiveServer
+@inject CountryService CountryService
+@inject UniversityService UniversityService
+
+
+<PageTitle>University Explorer</PageTitle>
+
+<div class="container py-4">
+    <h2 class="mb-3 text-primary">University Explorer</h2>
+    <p class="text-muted">Select a country to inspect country information and search available universities.</p>
+
+    @* Country Loading & Error States *@
+    @if (isLoadingCountries)
+    {
+        <div class="alert alert-info">
+            <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+            Loading countries...
+        </div>
+    }
+    else if (hasCountryError)
+    {
+        <div class="alert alert-danger">
+            Unable to retrieve countries data. Please try again later.
+        </div>
+    }
+    else
+    {
+        @* Requirement 2: Country Selection Dropdown *@
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <label for="countrySelect" class="form-label fw-bold">Select Country</label>
+                <select id="countrySelect" class="form-select" value="@selectedCountryName" @onchange="OnCountryChanged">
+                    <option value="">-- Select a Country --</option>
+                    @foreach (var country in countries)
+                    {
+                        <option value="@country.DisplayName">@country.DisplayName</option>
+                    }
+                </select>
+            </div>
+        </div>
+    }
+
+    @* Requirement 3: Country Details Card *@
+    @if (selectedCountry != null)
+    {
+        <CountryDetails Country="selectedCountry" />
+    }
+
+    @* Requirement 6: Selected University Details *@
+    @if (selectedUniversity != null)
+    {
+        <UniversityDetails University="selectedUniversity" OnClose="ClearSelectedUniversity" />
+    }
+
+    @* Requirement 4 & 5: Universities List and Live Search *@
+    @if (!string.IsNullOrWhiteSpace(selectedCountryName))
+    {
+        <hr class="my-4" />
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3 gap-2">
+            <h4 class="mb-0">Universities in @selectedCountryName (@FilteredUniversities.Count())</h4>
+
+            <div class="col-md-4">
+                <input class="form-control"
+                       @bind="SearchText"
+                       @bind:event="oninput"
+                       placeholder="Search university..." />
+            </div>
+        </div>
+
+        @if (isLoadingUniversities)
+        {
+            <div class="alert alert-info">
+                <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                Loading universities for @selectedCountryName...
+            </div>
+        }
+        else if (hasUniversityError)
+        {
+            <div class="alert alert-danger">
+                Unable to retrieve universities data for @selectedCountryName.
+            </div>
+        }
+        else if (!FilteredUniversities.Any())
+        {
+            <div class="alert alert-warning">
+                No universities found matching your criteria.
+            </div>
+        }
+        else
+        {
+            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                @foreach (var university in FilteredUniversities)
+                {
+                    <div class="col">
+                        <UniversityCard University="university" OnSelect="HandleUniversitySelected" />
+                    </div>
+                }
+            </div>
+        }
+    }
+</div>
+
+@code {
+    private List<Country> countries = new();
+    private Country? selectedCountry;
+    private string selectedCountryName = string.Empty;
+
+    private List<University> universities = new();
+    private University? selectedUniversity;
+    private string SearchText { get; set; } = string.Empty;
+
+    private bool isLoadingCountries = true;
+    private bool hasCountryError = false;
+
+    private bool isLoadingUniversities = false;
+    private bool hasUniversityError = false;
+
+    // Live filtered list based on SearchText
+    private IEnumerable<University> FilteredUniversities =>
+        string.IsNullOrWhiteSpace(SearchText)
+            ? universities
+            : universities.Where(u => u.Name.Contains(SearchText, StringComparison.OrdinalIgnoreCase));
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCountriesAsync();
+    }
+
+    private async Task LoadCountriesAsync()
+    {
+        isLoadingCountries = true;
+        hasCountryError = false;
+
+        try
+        {
+            countries = await CountryService.GetCountriesAsync();
+        }
+        catch (Exception)
+        {
+            hasCountryError = true;
+        }
+        finally
+        {
+            isLoadingCountries = false;
+        }
+    }
+
+    // Handles country dropdown selection and fetches corresponding universities
+    private async Task OnCountryChanged(ChangeEventArgs e)
+    {
+        selectedCountryName = e.Value?.ToString() ?? string.Empty;
+        selectedUniversity = null;
+        SearchText = string.Empty;
+        universities.Clear();
+
+        if (string.IsNullOrWhiteSpace(selectedCountryName))
+        {
+            selectedCountry = null;
+            return;
+        }
+
+        selectedCountry = countries.FirstOrDefault(c =>
+            c.DisplayName.Equals(selectedCountryName, StringComparison.OrdinalIgnoreCase));
+
+        await LoadUniversitiesAsync(selectedCountryName);
+    }
+
+    private async Task LoadUniversitiesAsync(string countryName)
+    {
+        isLoadingUniversities = true;
+        hasUniversityError = false;
+
+        try
+        {
+            universities = await UniversityService.GetUniversitiesByCountryAsync(countryName);
+        }
+        catch (Exception)
+        {
+            hasUniversityError = true;
+        }
+        finally
+        {
+            isLoadingUniversities = false;
+        }
+    }
+
+    // EventCallback handler when user selects a university card
+    private void HandleUniversitySelected(University university)
+    {
+        selectedUniversity = university;
+    }
+
+    private void ClearSelectedUniversity()
+    {
+        selectedUniversity = null;
+    }
+}

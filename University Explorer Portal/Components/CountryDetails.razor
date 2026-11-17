@@ -1,0 +1,34 @@
+﻿@* Reusable component displaying details for the selected country *@
+@if (Country != null)
+{
+    <div class="card shadow-sm mb-4 border-primary">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Country Details</h5>
+            @if (!string.IsNullOrWhiteSpace(Country.Flag))
+            {
+                <span class="fs-3">@Country.Flag</span>
+            }
+        </div>
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <p class="mb-2"><strong>Country:</strong> @Country.DisplayName</p>
+                    <p class="mb-2"><strong>Capital:</strong> @Country.DisplayCapital</p>
+                    <p class="mb-2"><strong>Region:</strong> @(string.IsNullOrWhiteSpace(Country.Region) ? "N/A" : Country.Region)</p>
+                    <p class="mb-0"><strong>Population:</strong> @Country.Population.ToString("N0")</p>
+                </div>
+                @if (Country.Flags != null && !string.IsNullOrWhiteSpace(Country.Flags.Png))
+                {
+                    <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                        <img src="@Country.Flags.Png" alt="@Country.DisplayName Flag" class="img-thumbnail" style="max-height: 90px;" />
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public Country? Country { get; set; }
+}

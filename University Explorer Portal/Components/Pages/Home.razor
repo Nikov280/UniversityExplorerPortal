@@ -1,0 +1,62 @@
+﻿@page "/"
+
+<PageTitle>Home - University Explorer Portal</PageTitle>
+
+<div class="container py-4">
+    <div class="p-5 mb-4 bg-light rounded-3 shadow-sm border">
+        <div class="container-fluid py-3">
+            <h1 class="display-5 fw-bold text-primary">University Explorer Portal</h1>
+            <p class="col-md-9 fs-5 text-muted">
+                Welcome to the University Explorer Portal. Discover countries around the world, browse accredited universities,
+                and submit or manage your university course applications all in one place.
+            </p>
+            <div class="d-flex flex-wrap gap-2 mt-4">
+                <a href="/university-explorer" class="btn btn-primary btn-lg">
+                    Explore Universities
+                </a>
+                <a href="/student-applications" class="btn btn-outline-primary btn-lg">
+                    View Applications
+                </a>
+                <a href="/student-applications/create" class="btn btn-success btn-lg">
+                    Create Application
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title text-primary">1. Country & University Mashup</h5>
+                    <p class="card-text">
+                        Select any country to view demographic insights alongside live university listings and websites.
+                    </p>
+                    <a href="/university-explorer" class="btn btn-sm btn-outline-primary">Go to Explorer</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title text-primary">2. Submit Applications</h5>
+                    <p class="card-text">
+                        Complete an application form with full validation to apply for your chosen university and course.
+                    </p>
+                    <a href="/student-applications/create" class="btn btn-sm btn-outline-primary">Apply Now</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title text-primary">3. Manage Submissions</h5>
+                    <p class="card-text">
+                        Review all submitted student applications and update existing records whenever required.
+                    </p>
+                    <a href="/student-applications" class="btn btn-sm btn-outline-primary">Manage Applications</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
