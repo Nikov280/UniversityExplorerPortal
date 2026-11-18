@@ -1,0 +1,112 @@
+﻿@page "/favourites"
+@rendermode InteractiveServer
+@inject LocalStorageService LocalStorage
+
+<PageTitle>Favourite Universities</PageTitle>
+
+<div class="container py-4">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3 gap-2">
+        <div>
+            <h2 class="mb-1 text-primary">★ Favourite Universities (@favourites.Count)</h2>
+            <p class="text-muted mb-0">Your saved universities persisted in Local Storage.</p>
+        </div>
+
+        <a href="/university-explorer" class="btn btn-outline-primary">
+            + Explore More Universities
+        </a>
+    </div>
+
+    @if (selectedUniversity != null)
+    {
+        <UniversityDetails University="selectedUniversity" OnClose="() => selectedUniversity = null" />
+    }
+
+    @if (isLoading)
+    {
+        <div class="alert alert-info">Loading your favourite universities...</div>
+    }
+    else if (!favourites.Any())
+    {
+        <div class="alert alert-warning mt-3">
+            You haven't added any favourite universities yet. Go to <a href="/university-explorer" class="alert-link">University Explorer</a> and click the <strong>☆</strong> icon on any university card!
+        </div>
+    }
+    else
+    {
+        <div class="row g-3 align-items-center my-3">
+            <div class="col-md-5">
+                <input class="form-control"
+                       @bind="searchText"
+                       @bind:event="oninput"
+                       placeholder="Filter favourites by name or country..." />
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" @bind="sortOrder">
+                    <option value="asc">Name (A → Z)</option>
+                    <option value="desc">Name (Z → A)</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 mt-1">
+            @foreach (var uni in FilteredFavourites)
+            {
+                <div class="col">
+                    <UniversityCard University="uni"
+                                    IsFavourite="true"
+                                    OnSelect="u => selectedUniversity = u"
+                                    OnToggleFavourite="RemoveFavourite" />
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private List<University> favourites = new();
+    private University? selectedUniversity;
+    private bool isLoading = true;
+    private string searchText = string.Empty;
+    private string sortOrder = "asc";
+
+    private IEnumerable<University> FilteredFavourites
+    {
+        get
+        {
+            var query = favourites.AsEnumerable();
+
+            if (!string.IsNullOrWhiteSpace(searchText))
+            {
+                query = query.Where(u =>
+                    u.Name.Contains(searchText, StringComparison.OrdinalIgnoreCase) ||
+                    u.Country.Contains(searchText, StringComparison.OrdinalIgnoreCase));
+            }
+
+            return sortOrder == "desc"
+                ? query.OrderByDescending(u => u.Name)
+                : query.OrderBy(u => u.Name);
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            favourites = await LocalStorage.GetItemAsync<List<University>>("favouriteUniversityObjects") ?? new();
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task RemoveFavourite(string universityName)
+    {
+        favourites.RemoveAll(u => u.Name.Equals(universityName, StringComparison.OrdinalIgnoreCase));
+        if (selectedUniversity?.Name.Equals(universityName, StringComparison.OrdinalIgnoreCase) == true)
+        {
+            selectedUniversity = null;
+        }
+
+        await LocalStorage.SetItemAsync("favouriteUniversityObjects", favourites);
+        await LocalStorage.SetItemAsync("favouriteUniversities", favourites.Select(u => u.Name).ToList());
+    }
+}

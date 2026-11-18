@@ -2,6 +2,7 @@
 @rendermode InteractiveServer
 @inject StudentApplicationService ApplicationService
 @inject NavigationManager Navigation
+@inject IJSRuntime JS
 
 <PageTitle>Student Applications</PageTitle>
 
@@ -56,11 +57,14 @@
                             <td>@app.UniversityName</td>
                             <td>@app.Country</td>
                             <td>@app.CourseName</td>
-                            <td>@app.ApplicationDate.ToString("yyyy-MM-dd")</td>
+                            <td>@app.ApplicationDate.ToString("yyyy-MM-dd")</td>                            
                             <td>
-                                <button class="btn btn-sm btn-outline-primary" @onclick="() => EditApplication(app.Id)">
-                                    Edit
-                                </button>
+                                <div class="d-flex gap-2">
+                                    <a href="/student-applications/edit/@app.Id" class="btn btn-sm btn-outline-primary">Edit</a>
+                                    <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteApplication(app.Id, app.StudentName)">
+                                        Delete
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                     }
@@ -103,5 +107,17 @@
     private void EditApplication(int id)
     {
         Navigation.NavigateTo($"/student-applications/edit/{id}");
+    }
+
+    private async Task DeleteApplication(int id, string studentName)
+    {
+        bool confirmed = await JS.InvokeAsync<bool>("confirm", $"Are you sure you want to delete the application for {studentName}?");
+        if (!confirmed) return;
+
+        var success = await ApplicationService.DeleteApplicationAsync(id);
+        if (success)
+        {
+            applications = await ApplicationService.GetApplicationsAsync();
+        }
     }
 }

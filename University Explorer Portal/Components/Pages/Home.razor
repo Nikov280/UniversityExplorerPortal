@@ -1,12 +1,15 @@
 ﻿@page "/"
+@rendermode InteractiveServer
+@inject StudentApplicationService ApplicationService
+@inject LocalStorageService LocalStorage
 
 <PageTitle>Home - University Explorer Portal</PageTitle>
 
 <div class="container py-4">
-    <div class="p-5 mb-4 bg-light rounded-3 shadow-sm border">
+    <div class="p-5 mb-4 bg-body-tertiary rounded-3 shadow-sm border">
         <div class="container-fluid py-3">
             <h1 class="display-5 fw-bold text-primary">University Explorer Portal</h1>
-            <p class="col-md-9 fs-5 text-muted">
+            <p class="col-md-9 fs-5 text-body-secondary">
                 Welcome to the University Explorer Portal. Discover countries around the world, browse accredited universities,
                 and submit or manage your university course applications all in one place.
             </p>
@@ -20,6 +23,45 @@
                 <a href="/student-applications/create" class="btn btn-success btn-lg">
                     Create Application
                 </a>
+            </div>
+        </div>
+    </div>
+
+    @* Distinction Feature: Dashboard Statistics *@
+    <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-4 g-3 mb-4">
+        <div class="col">
+            <div class="card border-primary h-100 shadow-sm">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-body-secondary">Total Applications</h6>
+                    <h2 class="card-title text-primary mb-0">@totalApplications</h2>
+                </div>
+            </div>
+        </div>
+
+        <div class="col">
+            <div class="card border-success h-100 shadow-sm">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-body-secondary">Countries Applied</h6>
+                    <h2 class="card-title text-success mb-0">@distinctCountries</h2>
+                </div>
+            </div>
+        </div>
+
+        <div class="col">
+            <div class="card border-warning h-100 shadow-sm">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-body-secondary">Favourite Universities</h6>
+                    <h2 class="card-title text-warning mb-0">@favouriteCount</h2>
+                </div>
+            </div>
+        </div>
+
+        <div class="col">
+            <div class="card border-info h-100 shadow-sm">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-body-secondary">Top Applied University</h6>
+                    <h5 class="card-title text-info mb-0">@topUniversity</h5>
+                </div>
             </div>
         </div>
     </div>
@@ -60,3 +102,48 @@
         </div>
     </div>
 </div>
+
+@code {
+    private int totalApplications;
+    private int distinctCountries;
+    private int favouriteCount;
+    private string topUniversity = "N/A";
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var apps = await ApplicationService.GetApplicationsAsync();
+            if (apps is not null && apps.Any())
+            {
+                totalApplications = apps.Count;
+                distinctCountries = apps
+                    .Select(a => a.Country)
+                    .Where(c => !string.IsNullOrWhiteSpace(c))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .Count();
+
+                topUniversity = apps
+                    .Where(a => !string.IsNullOrWhiteSpace(a.UniversityName))
+                    .GroupBy(a => a.UniversityName)
+                    .OrderByDescending(g => g.Count())
+                    .Select(g => g.Key)
+                    .FirstOrDefault() ?? "N/A";
+            }
+        }
+        catch
+        {
+            // Keep default 0 / N/A values if API is unreachable
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var favs = await LocalStorage.GetItemAsync<List<string>>("favouriteUniversities");
+            favouriteCount = favs?.Count ?? 0;
+            StateHasChanged();
+        }
+    }
+}

@@ -6,12 +6,14 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+builder.Services.AddScoped<LocalStorageService>();
 
 // Register HttpClient and custom API services
 builder.Services.AddScoped(sp => new HttpClient());
 builder.Services.AddScoped<CountryService>();
 builder.Services.AddScoped<UniversityService>();
 builder.Services.AddScoped<StudentApplicationService>();
+
 
 var app = builder.Build();
 

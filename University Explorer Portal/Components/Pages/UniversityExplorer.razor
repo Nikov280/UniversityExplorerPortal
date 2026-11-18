@@ -2,7 +2,7 @@
 @rendermode InteractiveServer
 @inject CountryService CountryService
 @inject UniversityService UniversityService
-
+@inject LocalStorageService LocalStorage
 
 <PageTitle>University Explorer</PageTitle>
 
@@ -53,7 +53,7 @@
         <UniversityDetails University="selectedUniversity" OnClose="ClearSelectedUniversity" />
     }
 
-    @* Requirement 4 & 5: Universities List and Live Search *@
+    @* Requirement 4 & 5 + Distinction Features: Search, Sort, Favourites & Pagination *@
     @if (!string.IsNullOrWhiteSpace(selectedCountryName))
     {
         <hr class="my-4" />
@@ -62,9 +62,33 @@
 
             <div class="col-md-4">
                 <input class="form-control"
-                       @bind="SearchText"
-                       @bind:event="oninput"
+                       value="@SearchText"
+                       @oninput="OnSearchChanged"
                        placeholder="Search university..." />
+            </div>
+        </div>
+
+        @* Sorting & Favourites Filter Bar *@
+        <div class="row g-3 align-items-center mb-4">
+            <div class="col-sm-6 col-md-4">
+                <label for="sortSelect" class="form-label fw-semibold mb-1">Sort by Name</label>
+                <select id="sortSelect" class="form-select form-select-sm" @bind="sortOrder" @bind:after="ResetPagination">
+                    <option value="asc">Name (A → Z)</option>
+                    <option value="desc">Name (Z → A)</option>
+                </select>
+            </div>
+
+            <div class="col-sm-6 col-md-5 d-flex align-items-end">
+                <div class="form-check form-switch mt-sm-4">
+                    <input class="form-check-input"
+                           type="checkbox"
+                           id="favOnlySwitch"
+                           @bind="showOnlyFavourites"
+                           @bind:after="ResetPagination" />
+                    <label class="form-check-label fw-semibold" for="favOnlySwitch">
+                        ★ Show Favourites Only (@favouriteUniversities.Count)
+                    </label>
+                </div>
             </div>
         </div>
 
@@ -90,13 +114,40 @@
         else
         {
             <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
-                @foreach (var university in FilteredUniversities)
+                @foreach (var university in PagedUniversities)
                 {
                     <div class="col">
-                        <UniversityCard University="university" OnSelect="HandleUniversitySelected" />
+                        <UniversityCard University="university"
+                                        OnSelect="HandleUniversitySelected"
+                                        IsFavourite="favouriteUniversities.Contains(university.Name)"
+                                        OnToggleFavourite="ToggleFavourite" />
                     </div>
                 }
             </div>
+
+            @* Pagination Controls *@
+            @if (TotalPages > 1)
+            {
+                <nav aria-label="Universities pagination" class="mt-4">
+                    <ul class="pagination justify-content-center flex-wrap">
+                        <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+                            <button class="page-link" @onclick="() => ChangePage(currentPage - 1)">Previous</button>
+                        </li>
+
+                        @for (int i = 1; i <= TotalPages; i++)
+                        {
+                            var pageNumber = i;
+                            <li class="page-item @(currentPage == pageNumber ? "active" : "")">
+                                <button class="page-link" @onclick="() => ChangePage(pageNumber)">@pageNumber</button>
+                            </li>
+                        }
+
+                        <li class="page-item @(currentPage == TotalPages ? "disabled" : "")">
+                            <button class="page-link" @onclick="() => ChangePage(currentPage + 1)">Next</button>
+                        </li>
+                    </ul>
+                </nav>
+            }
         }
     }
 </div>
@@ -116,15 +167,73 @@
     private bool isLoadingUniversities = false;
     private bool hasUniversityError = false;
 
-    // Live filtered list based on SearchText
-    private IEnumerable<University> FilteredUniversities =>
-        string.IsNullOrWhiteSpace(SearchText)
-            ? universities
-            : universities.Where(u => u.Name.Contains(SearchText, StringComparison.OrdinalIgnoreCase));
+    // Favourites, Sorting & Pagination state
+    private HashSet<string> favouriteUniversities = new(StringComparer.OrdinalIgnoreCase);
+    private List<University> favouriteUniversityList = new();
+    private bool showOnlyFavourites = false;
+    private string sortOrder = "asc";
+    private int currentPage = 1;
+    private const int PageSize = 6;
+
+    // Combined filter (SearchText + Favourites) and sorting (A-Z / Z-A)
+    private IEnumerable<University> FilteredUniversities
+    {
+        get
+        {
+            var query = universities.AsEnumerable();
+
+            if (!string.IsNullOrWhiteSpace(SearchText))
+            {
+                query = query.Where(u => u.Name.Contains(SearchText, StringComparison.OrdinalIgnoreCase));
+            }
+
+            if (showOnlyFavourites)
+            {
+                query = query.Where(u => favouriteUniversities.Contains(u.Name));
+            }
+
+            query = sortOrder == "desc"
+                ? query.OrderByDescending(u => u.Name)
+                : query.OrderBy(u => u.Name);
+
+            return query;
+        }
+    }
+
+    private int TotalPages => (int)Math.Ceiling(FilteredUniversities.Count() / (double)PageSize);
+
+    private IEnumerable<University> PagedUniversities =>
+        FilteredUniversities.Skip((currentPage - 1) * PageSize).Take(PageSize);
 
     protected override async Task OnInitializedAsync()
     {
         await LoadCountriesAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var savedList = await LocalStorage.GetItemAsync<List<University>>("favouriteUniversityObjects");
+            if (savedList is not null)
+            {
+                favouriteUniversityList = savedList;
+                favouriteUniversities = new HashSet<string>(
+                    savedList.Select(u => u.Name),
+                    StringComparer.OrdinalIgnoreCase);
+                StateHasChanged();
+            }
+            else
+            {
+                // Fallback in case only string names were saved previously
+                var savedNames = await LocalStorage.GetItemAsync<List<string>>("favouriteUniversities");
+                if (savedNames is not null)
+                {
+                    favouriteUniversities = new HashSet<string>(savedNames, StringComparer.OrdinalIgnoreCase);
+                    StateHasChanged();
+                }
+            }
+        }
     }
 
     private async Task LoadCountriesAsync()
@@ -152,6 +261,7 @@
         selectedCountryName = e.Value?.ToString() ?? string.Empty;
         selectedUniversity = null;
         SearchText = string.Empty;
+        currentPage = 1;
         universities.Clear();
 
         if (string.IsNullOrWhiteSpace(selectedCountryName))
@@ -182,6 +292,51 @@
         finally
         {
             isLoadingUniversities = false;
+        }
+    }
+
+    private void OnSearchChanged(ChangeEventArgs e)
+    {
+        SearchText = e.Value?.ToString() ?? string.Empty;
+        currentPage = 1;
+    }
+
+    private void ChangePage(int page)
+    {
+        if (page >= 1 && page <= TotalPages)
+        {
+            currentPage = page;
+        }
+    }
+
+    private void ResetPagination()
+    {
+        currentPage = 1;
+    }
+
+    private async Task ToggleFavourite(string universityName)
+    {
+        if (favouriteUniversities.Contains(universityName))
+        {
+            favouriteUniversities.Remove(universityName);
+            favouriteUniversityList.RemoveAll(u => u.Name.Equals(universityName, StringComparison.OrdinalIgnoreCase));
+        }
+        else
+        {
+            favouriteUniversities.Add(universityName);
+            var uniObj = universities.FirstOrDefault(u => u.Name.Equals(universityName, StringComparison.OrdinalIgnoreCase));
+            if (uniObj is not null)
+            {
+                favouriteUniversityList.Add(uniObj);
+            }
+        }
+
+        await LocalStorage.SetItemAsync("favouriteUniversities", favouriteUniversities.ToList());
+        await LocalStorage.SetItemAsync("favouriteUniversityObjects", favouriteUniversityList);
+
+        if (showOnlyFavourites && currentPage > TotalPages && TotalPages > 0)
+        {
+            currentPage = TotalPages;
         }
     }
 

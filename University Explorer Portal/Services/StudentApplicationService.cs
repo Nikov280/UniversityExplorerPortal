@@ -68,5 +68,12 @@ namespace UniversityExplorerPortal.Services
             var response = await _httpClient.PutAsJsonAsync($"{BaseApiUrl}/{id}", payload);
             return response.IsSuccessStatusCode;
         }
+
+        // DELETE: Delete a student application by ID
+        public async Task<bool> DeleteApplicationAsync(int id)
+        {
+            var response = await _httpClient.DeleteAsync($"{BaseApiUrl}/{id}");
+            return response.IsSuccessStatusCode;
+        }
     }
 }
