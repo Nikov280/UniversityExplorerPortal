@@ -50,6 +50,7 @@ A modern, interactive **Blazor Server** web application built with .NET that all
 
 ###Project Structure
 
+```text
 UniversityExplorerPortal/
 ├── Components/
 │   ├── Layout/
@@ -60,7 +61,8 @@ UniversityExplorerPortal/
 │   │   ├── UniversityExplorer.razor
 │   │   ├── StudentApplications.razor
 │   │   ├── CreateStudentApplication.razor
-│   │   └── EditStudentApplication.razor
+│   │   ├── EditStudentApplication.razor
+│   │   └── FavouriteUniversities.razor
 │   ├── CountryDetails.razor
 │   ├── StudentApplicationForm.razor
 │   ├── UniversityCard.razor
@@ -71,29 +73,31 @@ UniversityExplorerPortal/
 │   └── University.cs
 ├── Services/
 │   ├── CountryService.cs
+│   ├── LocalStorageService.cs
 │   ├── StudentApplicationService.cs
 │   └── UniversityService.cs
 ├── Program.cs
 └── README.md
+```
 
 ###Screenshoots
 
-1.	Home Page
-	(Screenshots/HomePage.png)
-2.	University Explorer Page
-	(Screenshots/UniversityExplorerPage.png)
-3.	Country selected and details displayed
-	(Screenshots/CountryDetails.png)
-4.	Universities loaded for a selected country
-	(Screenshots/UniversitiesLoaded.png)
-5.	University search functionality
-	(Screenshots/UniversitySearch.png)
-6.	University details displayed
-	(Screenshots/UniversityDetails.png)
-7.	Student Applications page (GET)
-	(Screenshots/StudentApplicationPage.png)
-8.	Create Student Application page (POST)
-	(Screenshots/CreateStudent.png)
-9.	Edit Student Application page (PUT)
-	(Screenshots/EditStudent.png)
+1.	**Home Page**
+	![Home Page](Screenshots/HomePage.png)
+2.	**University Explorer Page**
+	![University Explorer Page](Screenshots/UniversityExplorerPage.png)
+3.	**Country selected and details displayed**
+	![Country selected and details displayed](Screenshots/CountryDetails.png)
+4.	**Universities loaded for a selected country**
+	![Universities loaded for a selected country](Screenshots/UniversitiesLoaded.png)
+5.	**University search functionality**
+	![University search functionality](Screenshots/UniversitySearch.png)
+6.	**University details displayed**
+	![University details displayed](Screenshots/UniversityDetails.png)
+7.	**Student Applications page (GET)**
+	![Student Applications page (GET)](Screenshots/StudentApplicationPage.png)
+8.	**Create Student Application page (POST)**
+	![Create Student Application page (POST)](Screenshots/CreateStudent.png)
+9.	**Edit Student Application page (PUT)**
+	![Edit Student Application page (PUT)](Screenshots/EditStudent.png)
 
